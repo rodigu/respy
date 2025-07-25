@@ -1,0 +1,22 @@
+[project]
+name = "pyresq"
+version = "0.0.3"
+dependencies = [
+  "pyodbc",
+  "polars",
+]
+authors = [
+  { name="Rodrigo Morais", email="rodrigohmorais@proton.me" },
+]
+description = "Python REST HTTPS API to SQL database integrator."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/rodigu/pyresq"
+Issues = "https://github.com/rodigu/pyresq/issues"
