@@ -1,5 +1,5 @@
 [project]
-name = "pyresq"
+name = "respy"
 version = "0.0.3"
 dependencies = [
   "pyodbc",
@@ -18,5 +18,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rodigu/pyresq"
-Issues = "https://github.com/rodigu/pyresq/issues"
+Homepage = "https://github.com/rodigu/respy"
+Issues = "https://github.com/rodigu/respy/issues"
