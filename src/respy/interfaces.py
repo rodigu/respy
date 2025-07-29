@@ -77,14 +77,45 @@ class CursorPagination(PaginationSettings):
 
 
 class SubTable(TypedDict):
+    """assists in mapping data that should be directed to a different table.
+    for instance, an API response that has a key in the return with list of objects value.
+    the list of values may be directed to another table using the subtable settings.
+
+    ## address in response data
+
+    fed into `extract_endpoint_parameters_from_data`.
+    see function documentation for implementation details.
+    """
+
     address_in_response_data: DataAddressString
     table_settings: "TableSettings"
 
 
 class TableSettings(TypedDict):
-    type_mapping: dict[str, str]
+    """Settings for target tables in SQL database.
+
+    ## schema
+
+    polars [dataframe schema](https://docs.pola.rs/api/python/stable/reference/dataframe/api/polars.DataFrame.schema.html)
+    dictionary with column keys and polars type strings.
+
+    ## target_table
+
+    target table name string.
+
+    ## sub tables
+
+    dictionary of table name keys and subtable values.
+
+    ## composite_key
+
+    used to create a composite table key column.
+    """
+
+    schema: dict[str, str]
     target_table: SQLTableName
     sub_tables: Optional[dict[SQLTableName, SubTable]]
+    composite_key: Optional[list[str]]
 
 
 class APIEndpointConfiguration(TypedDict):
@@ -101,7 +132,7 @@ class APIEndpointConfiguration(TypedDict):
 class RESTSQLConverterConfiguration(TypedDict):
     fetch_meta: APIEndpointConfiguration
     data: ResponseData
-    type_mapping: dict[str, str]
+    table_settings: TableSettings
 
 
 class EngineConfiguration(TypedDict):
@@ -116,4 +147,3 @@ class EngineConfiguration(TypedDict):
 
 class EngineReturn(TypedDict):
     dependent_requests: Optional[list[APIEndpointConfiguration]]
-    fetched_data: ResponseData
