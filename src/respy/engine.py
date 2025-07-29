@@ -17,10 +17,23 @@ def engine(configuration: EngineConfiguration) -> EngineReturn:
     fetched_data: dict[RawAPIEndpoint, ResponseData] = dict()
 
     for endpoint in configuration["endpoints"]:
-        data = fetch(
-            endpoint_configuration=endpoint,
-            engine_configuration=configuration["engine"],
+        raw_api_endpoint = endpoint["api_endpoint"]
+
+        endpoint_configuration: APIEndpointConfiguration = nested_merge_dictionary(
+            configuration["endpoint_configuration_mapping"][raw_api_endpoint],
+            endpoint,
         )
+        data = fetch(
+            domain=configuration["domain"], configuration=endpoint_configuration
+        )
+
+        integrator_configuration: RESTSQLIntegratorConfiguration = {
+            "fetch_meta": endpoint_configuration,
+            "data": data,
+            "table_settings": endpoint_configuration["table_settings"],
+        }
+
+        integrator(configuration=integrator_configuration)
 
         fetched_data.update({endpoint["api_endpoint"]: data})
 
