@@ -135,14 +135,22 @@ class RESTSQLConverterConfiguration(TypedDict):
     table_settings: TableSettings
 
 
+# mapping from column names into SQL types
+type SQLColumnTypeMapping = dict[str, str]
+
+
 class EngineConfiguration(TypedDict):
-    """endpoint configurations set at the engine level amy be overwritten by fetcher-level configuration."""
+    """endpoint configurations set at the engine level amy be overwritten by fetcher-level configuration.
+
+    tables dictionary with type mapping is used to create tables when they don't exist in the database.
+    """
 
     domain: str
     endpoint_configuration_mapping: Optional[
         dict[RawAPIEndpoint, APIEndpointConfiguration]
     ]
     endpoints: list[APIEndpointConfiguration]
+    tables: dict[SQLTableName, SQLColumnTypeMapping]
 
 
 class EngineReturn(TypedDict):
