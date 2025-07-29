@@ -76,23 +76,10 @@ class CursorPagination(PaginationSettings):
     limit: FixedPaginationParameter
 
 
-class SubTable(TypedDict):
-    """assists in mapping data that should be directed to a different table.
-    for instance, an API response that has a key in the return with list of objects value.
-    the list of values may be directed to another table using the subtable settings.
-
-    ## address in response data
-
-    fed into `extract_endpoint_parameters_from_data`.
-    see function documentation for implementation details.
-    """
-
-    address_in_response_data: DataAddressString
-    table_settings: "TableSettings"
-
-
 class TableSettings(TypedDict):
     """Settings for target tables in SQL database.
+
+    used by the integrator.
 
     ## schema
 
@@ -105,17 +92,39 @@ class TableSettings(TypedDict):
 
     ## sub tables
 
-    dictionary of table name keys and subtable values.
+    dictionary of address in data keys and subtable values.
+    address fed into `extract_endpoint_parameters_from_data`.
+    see function documentation for implementation details.
+
+    all addresses in the subtable keys get popped fro mthe data dictionary before integration.
 
     ## composite_key
 
+    parent composite keys are concatenated and appended as a prefix
+    into the composite key of the child entry.
+
     used to create a composite table key column.
+    if the composite key list is ['id','content.category'],
+    a column 'id.content.category' will be created and used of updating, insertion, etc.
+
+    the dot syntax signifies nested data ('content': {'category':...}).
+
+    in the case of a simple (non-composite),
+    a value for the property should still be specified.
+
+    # meta_table
+
+    meta_table name.
+    if left undefined, the meta-table will be named using the convention
+    of a `_META` prefix followed by the table name: `f_META_{target_table}`.
     """
 
     schema: dict[str, str]
     target_table: SQLTableName
-    sub_tables: Optional[dict[SQLTableName, SubTable]]
-    composite_key: Optional[list[str]]
+    meta_table: Optional[SQLTableName]
+    sub_tables: Optional[dict[DataAddressString, "TableSettings"]]
+    composite_key: list[str]
+    ignore_data_at_address: Optional[list[DataAddressString]]
 
 
 class APIEndpointConfiguration(TypedDict):
@@ -125,11 +134,11 @@ class APIEndpointConfiguration(TypedDict):
     api_endpoint_parameters: Optional[dict]
     request_function_parameters: Optional[RequestFunctionParameters]
     dependent_requests: Optional[dict[RawAPIEndpoint, DataAddressString]]
-    table_settings: TableSettings
+    table_settings: Optional[TableSettings]
     pagination_settings: Optional[PaginationSettings]
 
 
-class RESTSQLConverterConfiguration(TypedDict):
+class RESTSQLIntegratorConfiguration(TypedDict):
     fetch_meta: APIEndpointConfiguration
     data: ResponseData
     table_settings: TableSettings
@@ -137,10 +146,17 @@ class RESTSQLConverterConfiguration(TypedDict):
 
 # mapping from column names into SQL types
 type SQLColumnTypeMapping = dict[str, str]
+# dictionary given to `polars.DataFrame` `schema` kwarg
+type PolarsSchema = dict[str, any]
+
+
+class SQLTableCreatorConfiguration(TypedDict):
+    table_name: SQLTableName
+    table_column_mapping: SQLColumnTypeMapping
 
 
 class EngineConfiguration(TypedDict):
-    """endpoint configurations set at the engine level amy be overwritten by fetcher-level configuration.
+    """endpoint configurations set at the engine level may be overwritten by fetcher-level configuration.
 
     tables dictionary with type mapping is used to create tables when they don't exist in the database.
     """
@@ -150,7 +166,7 @@ class EngineConfiguration(TypedDict):
         dict[RawAPIEndpoint, APIEndpointConfiguration]
     ]
     endpoints: list[APIEndpointConfiguration]
-    tables: dict[SQLTableName, SQLColumnTypeMapping]
+    tables_column_types: dict[SQLTableName, SQLColumnTypeMapping]
 
 
 class EngineReturn(TypedDict):
