@@ -1,13 +1,14 @@
-from utils import extract_endpoint_parameters_from_data
-from interfaces import (
+from .utils import extract_endpoint_parameters_from_data, nested_merge_dictionary
+from .interfaces import (
     APIEndpointConfiguration,
     EngineReturn,
     RawAPIEndpoint,
     ResponseData,
     EngineConfiguration,
+    RESTSQLIntegratorConfiguration,
 )
-
-from pydie.rest.fetcher import fetch
+from .integrator import integrator
+from .fetcher import fetch
 
 
 def engine(configuration: EngineConfiguration) -> EngineReturn:
