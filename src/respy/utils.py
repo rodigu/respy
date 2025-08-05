@@ -1,5 +1,5 @@
 from typing import Optional
-from interfaces import RequestParameters
+from .interfaces import RequestParameters
 
 
 def get_mapping_from(address_part: str) -> tuple[str, str]:
