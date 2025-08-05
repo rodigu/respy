@@ -22,7 +22,7 @@ def fetch(
 
     if response.status_code != 200:
         raise BaseException(
-            f"Details: [{response.status_code}: {response.reason}]\nFailed to call [{parametrized_api_endpoint}].\n[{configuration}]"
+            f"Details: [{response.status_code}: {response.reason}]\nFailed to call [{parametrized_api_endpoint}].\n>Params[{configuration['request_function_parameters'].get('params', None)}]"
         )
 
     return response.json()

@@ -76,14 +76,22 @@ class CursorPagination(PaginationSettings):
     limit: FixedPaginationParameter
 
 
+# mapping from column names into SQL types
+type SQLColumnTypeMapping = dict[str, str]
+# dictionary given to `polars.DataFrame` `schema` kwarg
+type PolarsSchema = dict[str, any]
+# mapping from column names (final, after normalization) to their date conversion strings (used in `strptime`)
+type DateColumnParseMapping = dict[str, str]
+
+
 class TableSettings(TypedDict):
     """Settings for target tables in SQL database.
 
     used by the integrator.
 
-    ## schema
+    ## polars_schema
 
-    polars [dataframe schema](https://docs.pola.rs/api/python/stable/reference/dataframe/api/polars.DataFrame.schema.html)
+    polars [dataframe polars_schema](https://docs.pola.rs/api/python/stable/reference/dataframe/api/polars.DataFrame.polars_schema.html)
     dictionary with column keys and polars type strings.
 
     ## target_table
@@ -103,9 +111,9 @@ class TableSettings(TypedDict):
     parent composite keys are concatenated and appended as a prefix
     into the composite key of the child entry.
 
-    used to create a composite table key column.
-    if the composite key list is ['id','content.category'],
-    a column 'id.content.category' will be created and used of updating, insertion, etc.
+    used to create a composite key column at the target table.
+    if the composite key list is ['id','content.category'], it is joined using `:`,
+    a column 'id:content.category' will be created and used of updating, insertion, etc.
 
     the dot syntax signifies nested data ('content': {'category':...}).
 
@@ -119,12 +127,39 @@ class TableSettings(TypedDict):
     of a `_META` prefix followed by the table name: `f_META_{target_table}`.
     """
 
-    schema: dict[str, str]
+    COMPOSITE_JOIN = ":"
+    polars_schema: PolarsSchema
+    date_columns_parsing_string: DateColumnParseMapping
     target_table: SQLTableName
-    meta_table: Optional[SQLTableName]
     sub_tables: Optional[dict[DataAddressString, "TableSettings"]]
     composite_key: list[str]
     ignore_data_at_address: Optional[list[DataAddressString]]
+
+
+class MetadataDictionary(TypedDict):
+    _IS_DELETED: list
+    _DT_DELETED: list
+    _DT_LAST_UPDATED: list
+    _DT_CREATED: list
+    _KEY: list
+    _SOURCE_TABLE_NAME: list
+
+
+class META_TABLE:
+    DELETED_FLAG = "_IS_DELETED"
+    DT_DELETED = "_DT_DELETED"
+    DT_LAST_UPDATED = "_DT_LAST_UPDATED"
+    DT_CREATED = "_DT_CREATED"
+    KEY_COLUMN = "_KEY"
+    SOURCE_TABLE_NAME = "_SOURCE_TABLE_NAME"
+    schema: PolarsSchema = {
+        DELETED_FLAG: "Boolean",
+        DT_DELETED: "Datetime",
+        DT_LAST_UPDATED: "Datetime",
+        DT_CREATED: "Datetime",
+        SOURCE_TABLE_NAME: "String",
+    }
+    SQL_types: SQLColumnTypeMapping = {}
 
 
 class APIEndpointConfiguration(TypedDict):
@@ -144,12 +179,6 @@ class RESTSQLIntegratorConfiguration(TypedDict):
     table_settings: TableSettings
 
 
-# mapping from column names into SQL types
-type SQLColumnTypeMapping = dict[str, str]
-# dictionary given to `polars.DataFrame` `schema` kwarg
-type PolarsSchema = dict[str, any]
-
-
 class SQLTableCreatorConfiguration(TypedDict):
     table_name: SQLTableName
     table_column_mapping: SQLColumnTypeMapping
@@ -167,6 +196,7 @@ class EngineConfiguration(TypedDict):
     ]
     endpoints: list[APIEndpointConfiguration]
     tables_column_types: dict[SQLTableName, SQLColumnTypeMapping]
+    meta_table_name: SQLTableName
 
 
 class EngineReturn(TypedDict):

@@ -6,9 +6,30 @@ from .interfaces import (
     ResponseData,
     EngineConfiguration,
     RESTSQLIntegratorConfiguration,
+    DataAddressString,
 )
 from .integrator import integrator
 from .fetcher import fetch
+
+
+def generate_dependent_configurations(
+    data: dict, dependent_requests: dict[RawAPIEndpoint, DataAddressString]
+):
+    dependent_configurations: list[APIEndpointConfiguration] = list()
+
+    for dependent_endpoint, address_in_data in dependent_requests.items():
+        endpoint_parameters = extract_endpoint_parameters_from_data(
+            data=data, address_list=address_in_data.split(".")
+        )
+        for parameters in endpoint_parameters:
+            dependent_configurations.append(
+                {
+                    "api_endpoint": dependent_endpoint,
+                    "api_endpoint_parameters": parameters,
+                }
+            )
+
+    return dependent_configurations
 
 
 def engine(configuration: EngineConfiguration) -> EngineReturn:
@@ -37,17 +58,11 @@ def engine(configuration: EngineConfiguration) -> EngineReturn:
 
         fetched_data.update({endpoint["api_endpoint"]: data})
 
-        for dependent_endpoint, address_in_data in configuration["engine"][
-            "endpoint_configuration_mapping"
-        ][endpoint["api_endpoint"]]["dependent_requests"].items():
-            endpoint_parameters = extract_endpoint_parameters_from_data(
-                data=data, address_list=address_in_data.split(".")
-            )
-            for parameters in endpoint_parameters:
-                dependent_requests.append(
-                    {
-                        "api_endpoint": dependent_endpoint,
-                        "api_endpoint_parameters": parameters,
-                    }
-                )
-    return {"dependent_requests": dependent_requests, "fetched_data": fetched_data}
+        dependent_requests += generate_dependent_configurations(
+            data=data,
+            dependent_requests=configuration["engine"][
+                "endpoint_configuration_mapping"
+            ][endpoint["api_endpoint"]]["dependent_requests"],
+        )
+
+    return {"dependent_requests": dependent_requests}

@@ -66,10 +66,30 @@ def nested_merge_dictionary(d1: dict, d2: dict) -> dict:
     keys with dictionary values are recursively created using values from d1 and d2.
     when keys that are not dictionary values exist in both d1 and d2, the value from d2 is used.
     """
-    result = dict(d1)  # start with a shallow copy of d1
+    result = dict(d1)
     for key, value in d2.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = nested_merge_dictionary(result[key], value)
         else:
             result[key] = value
     return result
+
+
+def pop_data_at_address(data: dict, address_list: list[str]):
+    """pops data in address from given dictionary
+
+    >>> d={'a':{'b':1,'c':{'d':0}}}
+    >>> pop_data_at_address(d,'a.c.d'.split('.'))
+    0
+    >>> d
+    {'a': {'b': 1, 'c': {}}}
+
+    :param dict data: data that contains key sequence specified in address list
+    :param list[str] address_list: address to key-value pair to be popped from data
+    """
+    _d = data
+
+    for address_part in address_list[:-1]:
+        _d = _d.get(address_part, {})
+
+    return _d.pop(address_list[-1], {})
